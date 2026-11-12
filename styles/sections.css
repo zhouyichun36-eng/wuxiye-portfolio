@@ -1,0 +1,558 @@
+/* ==========================================================================
+   sections.css — 页面基础版式规则（Desktop / Mobile）
+   --------------------------------------------------------------------------
+   原则：
+   - Desktop：利用横向空间，不对称分栏，明显留白，允许错位
+   - Mobile：保留编辑感（非信息流），图文重排，大图接近满宽
+   之后每页真实排版可在对应 section 模块旁扩展，这里只定义基调。
+   ========================================================================== */
+
+/* —— 页面骨架：大留白，内容不被迫居中，给构图留自由度 ——
+   Phase 17：拆开 padding 为 top / bottom，top 走 --page-top
+   （Header 高度 + 1.25rem 视觉呼吸），bottom 保留原 --pad-y。
+   这样顶部内容起点总在 Header 下方，但不会和原本的底部留白叠加成"大空洞"。 */
+.page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-content: safe center;  /* 内容超出一屏时从顶部开始，不裁切 */
+  padding: var(--page-top) var(--pad-x) var(--pad-y);
+  width: 100%;
+  min-height: 0;                  /* 允许 section-scroll 正确收缩 */
+}
+/* 页内可滚动区域也保留 Header Safe Area（防止顶部文字被固定栏覆盖） */
+.section-scroll {
+  scroll-padding-top: var(--header-height);
+}
+
+/* 页眉小标签：编号 / 分类，编辑出版物式 */
+.page-kicker {
+  font-size: var(--fs-nav);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--gray-40);
+  margin-bottom: var(--s-3);
+  font-weight: 400;
+}
+
+/* ————————————————————————————————————————————
+   P1 COVER — 照片底图 + 真实手写素材标题（独立 custom layout）
+   最终视觉层级：
+   1. 中央：手写「作品集」PNG（用户真实手写素材，白色笔触透明底，主视觉）
+   2. 左上角：PORTFOLIO（杂志刊名式英文标识，干净无衬线、小字距拉开）
+   3. 底图：承担氛围和颜色（轻微压暗，保证白色手写在浅色区域可读）
+   交互：仅入场 staggered reveal + 手写标题弹跳（title-bounce.js）。
+   ———————————————————————————————————————————— */
+
+.page-cover {
+  padding: 0;                    /* 底图满幅，覆盖 .page 的留白 */
+  display: block;
+}
+
+/* —— 底图 —— */
+.cover-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;      /* Desktop：完整居中 */
+  filter: brightness(0.8);       /* 轻微压暗，让白色手写在浅色区域可读 */
+}
+
+/* —— 构图层：flex 居中（避免用 transform 居中，防止与弹跳动画冲突） —— */
+.cover-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* —— 手写「作品集」：页面视觉中心，第一层级 —— */
+/* Interaction Pass：整体相对初版缩小 ~15%（Desktop 290–600px，Mobile 70vw/360px max），
+   给背景照片更多呼吸空间。Hover 状态使用自定义属性驱动，Click Bounce 由 WAAPI 临时覆盖。
+   Phase 18：再缩小一档 —— Desktop 平均约 88%（5–10%），Mobile 平均约 87%（10–15%），
+   让中央手写标题更轻、给底图更多呼吸。 */
+.cover-title {
+  height: clamp(255px, 47vh, 545px);   /* Desktop：相对上一档再缩 5–10% */
+  width: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+  transform: translateY(var(--hover-y, 0px))
+             scale(var(--hover-s, 1))
+             rotate(var(--hover-r, 0deg));
+  transform-origin: 50% 60%;
+  transition: transform var(--dur-1) var(--ease-standard);
+  will-change: transform;
+}
+.cover-title.is-hover {
+  --hover-y: -3px;
+  --hover-s: 1.015;
+  --hover-r: -0.3deg;
+}
+
+/* —— PORTFOLIO：左上角刊名。
+   Phase 18：放大约 2 倍（0.72rem → 1.5rem≈2.08×），但保留 letter-spacing 与颜色，
+   不与"作品集"主视觉抢戏。 */
+.cover-brand {
+  position: absolute;
+  top: clamp(1.5rem, 4vh, 2.75rem);
+  left: clamp(1.5rem, 4vw, 3.5rem);
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1.5rem;                            /* 约 2×（原 --fs-nav = 0.72rem） */
+  font-weight: 500;
+  letter-spacing: 0.32em;                       /* 保留杂志刊名字距感 */
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  user-select: none;
+}
+
+/* —— 吴熙晔：右上角姓名（Phase 18 新增）。
+   与 PORTFOLIO 同字号、同字重逻辑、同垂直基准；letter-spacing 改用 CJK 适配值，
+   让中文字符保持正常字距；右对齐，与左边缘 PORTFOLIO 形成封面顶部左右平衡。 */
+.cover-name {
+  position: absolute;
+  top: clamp(1.5rem, 4vh, 2.75rem);
+  right: clamp(1.5rem, 4vw, 3.5rem);
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1.5rem;                            /* 与 .cover-brand 完全相同 */
+  font-weight: 500;                              /* 与 .cover-brand 完全相同 */
+  letter-spacing: 0.16em;                        /* CJK 字距，适度拉开、不破坏中文字形 */
+  color: rgba(255, 255, 255, 0.92);              /* 与 .cover-brand 同色（保持现有视觉样式） */
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* —— 向下滑动提示（Phase 19 新增）：封面右下方，极简向下箭头 + 极小文字。
+   常驻显示，替代原先「首次进入的一次性 scroll-hint 引导」，避免两个提示重复/遮挡。
+   白字跟随封面底图可读性；极小字号不抢「作品集」主视觉；pointer-events:none 不挡交互。 */
+.cover-scroll-hint {
+  position: absolute;
+  right: clamp(1.5rem, 4vw, 3.5rem);
+  bottom: calc(clamp(1.5rem, 4vh, 2.75rem) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);           /* 极小，克制 */
+  letter-spacing: var(--ls-kicker);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.92);
+  user-select: none;
+  pointer-events: none;
+}
+.cover-scroll-hint .csh-arrow { font-size: 1em; line-height: 1; }
+
+/* —— Mobile：手写标题再缩一档；刊名/姓名同步缩到合适 Mobile 尺寸 —— */
+@media (max-width: 767px) {
+  .cover-bg { object-position: 42% 50%; }   /* 裁切焦点对准画面主体 */
+  .cover-title {
+    height: auto;
+    width: min(70vw, 365px);                 /* Mobile：相对上一档再缩 10–15% */
+  }
+  .cover-brand {
+    top: max(1.25rem, env(safe-area-inset-top));
+    left: 1.5rem;
+    font-size: 1.1rem;                       /* Mobile：保持放大约 2× 的相对感受，但缩到屏幕容纳 */
+    letter-spacing: 0.26em;
+  }
+  .cover-name {
+    top: max(1.25rem, env(safe-area-inset-top));
+    right: 1.5rem;
+    font-size: 1.1rem;                       /* 与 Mobile .cover-brand 完全相同 */
+    letter-spacing: 0.14em;
+  }
+  /* 向下滑动提示：Mobile 右对齐 cover-name，bottom 已含 safe-area-inset-bottom 自动抬高 */
+  .cover-scroll-hint { right: 1.5rem; }
+}
+
+/* P1 入场：克制的 staggered reveal（底图 → 刊名 → 手写标题） */
+.deck-section.is-active .page-cover .cover-brand.anim-in { transition-delay: 150ms; }
+.deck-section.is-active .page-cover .cover-name.anim-in { transition-delay: 150ms; }
+.deck-section.is-active .page-cover .cover-title.anim-in { transition-delay: 300ms; }
+.deck-section.is-active .page-cover .cover-scroll-hint.anim-in { transition-delay: 480ms; }
+
+/* ————————————————————————————————————————————
+   FOLIO — 刊头（页码 + 章节标识），来自文档每页页眉
+   绝对定位在页面上缘，不参与构图、不占视觉中心
+   ———————————————————————————————————————————— */
+.folio {
+  position: absolute;
+  top: clamp(1.25rem, 3.5vh, 2.5rem);
+  left: var(--pad-x);
+  right: var(--pad-x);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--fs-nav);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--gray-40);
+  pointer-events: none;
+}
+
+/* ————————————————————————————————————————————
+   章节过渡页样式已迁移至 styles/layouts.css
+   （LAYOUT A — .layout-section-opener）
+   ———————————————————————————————————————————— */
+
+/* ————————————————————————————————————————————
+   项目正文页 — 编辑式文字块排版（非卡片、非固定模板）
+   ———————————————————————————————————————————— */
+.project-head { max-width: 46rem; }
+.page-project .project-title {
+  font-size: var(--fs-project);
+  line-height: var(--lh-title);
+  letter-spacing: -0.01em;
+  font-weight: 700;            /* Phase 17：项目中文主标题 500→700 */
+}
+.project-lede {
+  margin-top: var(--s-2);
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-title);
+  max-width: var(--measure);
+  font-weight: 500;            /* Phase 17：导语 400→500 */
+}
+.project-intro {
+  margin-top: var(--s-4);
+  max-width: var(--measure);
+}
+
+/* 文字块：小标签 + 正文（label 与正文关系见上方 EDITORIAL TEXT COMPOSITION） */
+.blocks { margin-top: var(--s-4); }
+.block + .block { margin-top: var(--s-4); }
+.block-body p { line-height: var(--lh-body); }
+.block-body p + p { margin-top: 0.9em; }   /* 视觉断句后的段落呼吸 */
+/* 旧缩进类保留兼容：桌面端让偶数块内缩（新页面优先用 e-x-in1/in2/right） */
+@media (min-width: 900px) {
+  .block--indent { margin-left: clamp(4rem, 16vw, 22rem); }
+}
+
+/* 行内数据强调：出版物中的数字，不放大成 Dashboard KPI */
+.num {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 数据行：大数字 + 说明，像独立出版物的 statistics */
+.data-row {
+  margin-top: var(--s-5);
+  display: flex;
+  gap: clamp(2.5rem, 7vw, 7rem);
+  flex-wrap: wrap;
+}
+.data-num {
+  font-size: var(--fs-data);
+  line-height: 1;
+  font-weight: 700;            /* Phase 17：data-num 500→700 */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.data-cap {
+  margin-top: var(--s-1);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--gray-60);
+}
+
+/* ————————————————————————————————————————————
+   图片槽：为未来真实图片预留的语义化 hook
+   空槽完全隐藏（不显示占位框）；放入图片后自然显示
+   ———————————————————————————————————————————— */
+.img-slot:empty { display: none; }
+.img-slot { margin-top: var(--s-4); }
+
+/* ————————————————————————————————————————————
+   EDITORIAL TEXT COMPOSITION（PART 02-05 核心）
+   —— 正文不再是同宽、同起点、依次向下的 <p>。
+   它们是可以【宽窄 / 水平位移 / label 位置 / 断句】的 Editorial Object。
+   共享语法（grammar），但不复制同一错位公式：每页各自组合，形成克制的不对称。
+   强调必须克制：一页至多 1 处视觉强调。
+   ———————————————————————————————————————————— */
+
+/* 正文行宽：不允许全站统一 width:100%（后台在 .blocks .block-body 默认 measure） */
+.block-body { max-width: var(--measure); }
+.e-w-wide   .block-body { max-width: var(--measure); }   /* 28em 主要信息块 */
+.e-w-mid    .block-body { max-width: 21em; }             /* 较短正文 */
+.e-w-narrow .block-body { max-width: 15.5em; }           /* 一句/简短 */
+.e-w-tight  .block-body { max-width: 12em; }             /* 极限短行 */
+
+/* 水平位置：每页只需 2-3 次明显横向变化（克制的不对称，非 zig-zag 游戏） */
+@media (min-width: 768px) {
+  .block { width: fit-content; max-width: 100%; }        /* 允许被水平推动、可窄可宽 */
+  .e-x-plain  { margin-left: 0; margin-right: 0; }
+  .e-x-in1    { margin-left: clamp(2rem, 9vw, 12rem); }              /* 稍右一档 */
+  .e-x-in2    { margin-left: clamp(3.5rem, 22vw, 30rem); }           /* 明显靠右 */
+  .e-x-right  { margin-left: auto; margin-right: clamp(2rem, 8vw, 10rem); } /* 贴右但留白 */
+  .e-x-center { margin-left: auto; margin-right: auto; }
+  .block.e-x-l { grid-template-columns: 6.5em 1fr; }      /* 见下方 e-lb-row */
+}
+
+/* label 与正文的两种关系：默认上下堆叠；e-lb-row → label 作左侧 note 标签 */
+.block.e-lb-row {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  column-gap: var(--s-3);
+  align-items: baseline;
+}
+.block.e-lb-row .block-label { margin-bottom: 0; }
+
+/* 小型 editorial statement：把原文一句单独成行、轻微加粗（克制，一页至多一处） */
+.e-statement {
+  font-weight: 500;
+  letter-spacing: 0.005em;
+}
+/* label 作为「说明性小注」时，减弱它与正文的层级对比（仍是纯黑，仅靠字号/字距） */
+.block-label { font-size: var(--fs-subtitle); font-weight: 600; }       /* Phase 17：500→600 */
+/* Phase 19：小标题统一为「中文 + 小英文」。中文 600 稍大为主，英文 500 稍小为辅。
+   只用 字号 / 字重 / 间距 区分，不用竖线 / 斜杠 / 括号 / 颜色 / Pill / 背景。 */
+.block-label .bl-zh { font-weight: 600; }
+.block-label .bl-en {
+  margin-left: 0.9em;
+  font-size: 0.82em;                    /* 英文明显小于中文 */
+  font-weight: 500;                     /* 略轻于中文 */
+  letter-spacing: 0.02em;
+}
+.block-label--note {
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+/* Mobile：编辑感保留但克制 —— 不做死模板，小图保持小、错位保留但收窄，禁止横向溢出 */
+@media (max-width: 767px) {
+  .block { width: auto; max-width: 100%; }
+  /* 普通正文占可用宽度 65–82%，营造节奏而非铺满整屏 */
+  .block-body { max-width: 34em; }
+  .block.e-lb-row { grid-template-columns: 1fr; row-gap: 0.35em; }
+  .block.e-lb-row .block-label { margin-bottom: 0; }
+  /* 移动端错位仍保留，只是更克制（对应 Desktop 的 in1/in2/right） */
+  .e-x-in1   { margin-left: 6vw; }
+  .e-x-in2   { margin-left: 13vw; }
+  .e-x-right { margin-left: 8vw; margin-right: 0; }
+  .e-x-center, .e-x-plain { margin-left: 0; margin-right: 0; }
+}
+/* 极窄屏（如 360px）：错位进一步收窄，保证可读 */
+@media (max-width: 420px) {
+  .e-x-in1   { margin-left: 4vw; }
+  .e-x-in2   { margin-left: 8vw; }
+  .e-x-right { margin-left: 5vw; }
+}
+
+/* ————————————————————————————————————————————
+   目录页 — 左右交错的 Editorial Contents（PART 11）
+   无任何横线 / divider / table separator。
+   靠：数字、中文章节名、小英文、左右位置、垂直距离、大量留白 建立节奏。
+   左 右 左 右 左，但坐标各不相同，不机械复制。
+   ———————————————————————————————————————————— */
+.toc-title {
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;            /* Phase 17：P03 大标题 500→700 */
+  margin-bottom: var(--s-4);
+}
+.toc-stagger {
+  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: var(--s-5);
+}
+.toc-entry {
+  display: block;
+  width: fit-content;
+  text-decoration: none;
+}
+.toc-entry + .toc-entry { margin-top: clamp(2.5rem, 7vh, 5.5rem); }
+.toc-entry .toc-num {
+  display: block;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  color: var(--gray-40);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  margin-bottom: 0.7em;
+}
+.toc-entry .toc-zh {
+  display: block;
+  font-size: clamp(1.4rem, 3.2vw, 2.5rem);
+  font-weight: 700;            /* Phase 17：toc-zh 500→700 */
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.toc-entry .toc-en {
+  display: block;
+  margin-top: 0.5em;
+  font-size: var(--fs-subtitle);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  font-weight: 500;            /* Phase 17：toc-en 400→500（仍弱于中文） */
+}
+/* 左 / 右 / 左 / 右 / 左，位置各有轻微变化 */
+.toc-entry:nth-child(1) { margin-left: 0; }
+.toc-entry:nth-child(2) { margin-left: auto; margin-right: clamp(2rem, 11vw, 14rem); }
+.toc-entry:nth-child(3) { margin-left: clamp(0.5rem, 4vw, 6rem); }
+.toc-entry:nth-child(4) { margin-left: auto; margin-right: clamp(3rem, 15vw, 20rem); }
+.toc-entry:nth-child(5) { margin-left: clamp(1rem, 6vw, 9rem); }
+@media (max-width: 767px) {
+  .toc-entry + .toc-entry { margin-top: clamp(2rem, 8svh, 3.5rem); }
+  .toc-entry:nth-child(2) { margin-right: 4vw; }
+  .toc-entry:nth-child(3) { margin-left: 3vw; }
+  .toc-entry:nth-child(4) { margin-right: 7vw; }
+  .toc-entry:nth-child(5) { margin-left: 5vw; }
+}
+
+/* ————————————————————————————————————————————
+   About 页（P02）— 人物靠最左，正文在其右侧形成留白（PART 10）
+   Desktop：人物作为真实对象靠最左，文字与人物之间保持明显留白。
+   Mobile：保持偏左关系，尺寸响应式缩小。
+   ———————————————————————————————————————————— */
+.about-head { margin-bottom: var(--s-5); }
+.about-title {
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;            /* Phase 17：P02 大标题 500→700 */
+}
+.about-lede {
+  margin-top: var(--s-2);
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-title);
+  max-width: var(--measure);
+  font-weight: 500;            /* Phase 17：subtle 加到 500 */
+}
+.about-compose {
+  display: flex;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: flex-start;
+  margin-top: var(--s-3);
+}
+.about-compose .img-slot {
+  width: clamp(15rem, 24vw, 24rem);
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+.about-compose .about-blocks {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+  padding-top: var(--s-2);
+}
+.about-blocks .caps { letter-spacing: 0.02em; }
+@media (max-width: 767px) {
+  .about-compose { flex-direction: column; gap: var(--s-3); }
+  .about-compose .img-slot { width: min(60vw, 20rem); margin-left: 0; }
+  .about-compose .about-blocks { padding-top: 0; }
+}
+
+/* ————————————————————————————————————————————
+   Contact / Closing 页（P20）— 出版物式结尾
+   人物抠图明显缩小（陪伴性视觉，非 Hero）+ 文字并置：
+   Desktop：人物偏下一侧、文字偏上一侧，轻微不对称、大量留白；
+   Mobile：文字在上偏右、人物小而偏左，不铺满。
+   人物与文字绝不重叠。白底黑字、colophon 式联系方式，非表单。
+   ———————————————————————————————————————————— */
+.contact-compose {
+  display: flex;
+  gap: clamp(3rem, 9vw, 9rem);
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin-top: var(--s-4);
+}
+.contact-portrait {
+  flex: 0 0 auto;
+  margin-top: clamp(3.5rem, 14vh, 8rem);   /* 人物偏下：轻微不对称 */
+}
+.contact-portrait .img-slot {
+  width: clamp(11rem, 17vw, 18rem);        /* 明显缩小：陪伴性视觉，不再是 Hero */
+  margin-top: 0;
+}
+.contact-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 32em;
+  padding-top: clamp(0.75rem, 4vh, 2rem);   /* 文字偏上：与人物形成错落 */
+}
+.contact-kicker {
+  font-size: var(--fs-nav);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--gray-40);
+  margin-bottom: var(--s-3);
+  font-weight: 500;
+}
+.contact-title {
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;            /* Phase 17：P20 大标题 500→700 */
+}
+.contact-en {
+  margin-top: var(--s-1);
+  font-size: var(--fs-subtitle);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  font-weight: 500;            /* Phase 17：400→500 */
+}
+/* colophon / contact note：label 小字 + 值大字，克制、有呼吸感，非表单 */
+.contact-lines {
+  margin-top: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.contact-line { display: flex; flex-direction: column; gap: 0.4em; }
+.contact-label {
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--gray-40);
+}
+.contact-value {
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-title);
+  font-weight: 500;            /* Phase 17：400→500（邮箱/电话更易读） */
+  font-variant-numeric: tabular-nums;
+}
+@supports not (letter-spacing: var(--ls-kicker)) { /* noop */ }
+@media (max-width: 767px) {
+  /* 文字在上偏右、人物在下偏左（column-reverse 翻转 DOM 顺序） */
+  .contact-compose { flex-direction: column-reverse; gap: var(--s-4); margin-top: var(--s-4); }
+  .contact-portrait { margin-top: 0; align-self: flex-start; margin-left: clamp(0.25rem, 6vw, 1rem); }
+  .contact-portrait .img-slot { width: min(46vw, 15rem); }   /* 明显小，不铺满屏幕 */
+  .contact-note { padding-top: 0; }
+  .contact-lines { margin-top: var(--s-3); }
+}
+
+
+/* ————————————————————————————————————————————
+   LAYOUT PRESETS（可选调用，非默认）
+   之后逐页构图时，给页面容器加对应类即可启用；
+   不加任何 preset 的页面保持自由流动构图。
+   ———————————————————————————————————————————— */
+
+/* preset: 图 7 / 文 5 不对称分栏（桌面），文字与图片底部对齐 */
+@media (min-width: 900px) {
+  .layout-7-5 {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-4);
+    align-items: end;
+  }
+  /* 同 preset 的镜像变体：文字在左、图在右（手动指定，不自动交替） */
+  .layout-7-5.layout-reversed > :first-child { order: 2; }
+}

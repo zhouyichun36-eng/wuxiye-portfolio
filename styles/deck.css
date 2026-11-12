@@ -1,0 +1,133 @@
+/* ==========================================================================
+   deck.css — 整页浏览机制样式（editorial 版）
+   导航元素保持克制：细线、小字、纸面之上几乎隐形。
+   ========================================================================== */
+
+.deck {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;               /* dvh：移动端地址栏伸缩时保持稳定 */
+  overflow: hidden;
+}
+
+.deck-track {
+  height: 100%;
+  will-change: transform;
+  transition: transform var(--dur-3) var(--ease-deck);
+}
+.deck-track.no-transition { transition: none; }  /* 引擎初始化前防首屏闪动 */
+
+.deck-section {
+  position: relative;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;             /* 默认整页；页内滚动用 .section-scroll 显式开启 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* —— 当前页入场：内容轻微上浮淡入，自然而非机械 —— */
+.deck-section .anim-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-2) var(--ease-standard),
+    transform var(--dur-2) var(--ease-standard);
+}
+.deck-section.is-active .anim-in {
+  opacity: 1;
+  transform: none;
+}
+.deck-section.is-active .anim-in:nth-child(2) { transition-delay: 80ms; }
+.deck-section.is-active .anim-in:nth-child(3) { transition-delay: 160ms; }
+.deck-section.is-active .anim-in:nth-child(4) { transition-delay: 240ms; }
+
+/* —— 进度指示：细短划线（编辑感），当前页线段加长 —— */
+.deck-dots {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.deck-dots button {
+  position: relative;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.deck-dots button::after {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 1.5px;
+  background: var(--gray-40);
+  transition: width var(--dur-1) var(--ease-standard),
+              background var(--dur-1) var(--ease-standard);
+}
+.deck-dots button.is-active::after {
+  width: 32px;
+  background: var(--ink);
+}
+/* 触屏目标放大（视觉保持纤细，点击区域 >= 44px，移动端单手可点） */
+.deck-dots button::before {
+  content: "";
+  position: absolute;
+  inset: -14px -8px;
+}
+@media (max-width: 767px) {
+  .deck-dots button::before { inset: -22px -10px; }  /* 1.5px 线 + 44px 触控高度 */
+}
+/* 桌面：右侧垂直居中，线段竖排 */
+@media (min-width: 768px) {
+  .deck-dots {
+    right: clamp(1.25rem, 2.5vw, 2.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+  }
+  .deck-dots button::after { width: 1.5px; height: 18px; }
+  .deck-dots button.is-active::after { width: 1.5px; height: 32px; }
+  .deck-dots button::before { inset: -6px -14px; }
+}
+/* 移动：底部水平居中，避让安全区 */
+@media (max-width: 767px) {
+  .deck-dots {
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    transform: translateX(-50%);
+  }
+}
+
+/* —— 页码计数已并入全局 Header（styles/site-chrome.css 的 .site-num） —— */
+
+/* ————————————————————————————————————————————
+   Page Transition（PART 04）— 极轻纸张翻页感
+   离开 Section 极轻放下（opacity 0.92 + scale 0.985）；
+   进入 Section 从 translateY(22px) / opacity 0 浮入。
+   不做 PowerPoint Transition / 3D / 卡片翻页。
+   transform 在 deck-section 自身；deck-track 的 translateY 是另一套层级，不冲突。
+   —— 顺序注意：is-entering / is-leaving 必须声明在 is-active 之后，
+      确保同时挂 is-active 时，"进入初始态"能覆盖 is-active 的 opacity:1，
+      从而触发真正从 0 淡入的过渡。 ——
+   ———————————————————————————————————————————— */
+.deck-section {
+  transition:
+    opacity 380ms var(--ease-standard),
+    transform 420ms var(--ease-standard);
+  will-change: opacity, transform;
+}
+.deck-section.is-active {
+  opacity: 1;
+  transform: none;
+}
+.deck-section.is-leaving {
+  opacity: 0.92;
+  transform: scale(0.985);
+}
+.deck-section.is-entering {
+  opacity: 0;
+  transform: translateY(22px);
+}

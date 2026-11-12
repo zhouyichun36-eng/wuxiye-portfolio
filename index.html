@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="Ain6F1ZOxhL582Ig8Ddg1E">
+<head data-page-node-id="Wqjr0v3qSh8PZbt7n35VJv">
+  <meta charset="UTF-8" data-page-node-id="K8aklW2nRWgiDun40NhtbK" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" data-page-node-id="GHMMsHQjFpeBvGDNo7gZ2p" />
+  <title>Portfolio — 吴熙晔</title>
+  <meta name="description" content="个人交互式作品集 / Interactive Portfolio" data-page-node-id="Ar6wybEvmXfCdd5SDbHmQk" />
+
+  <!-- 性能：封面手写标题为主视觉，优先加载 -->
+  <link rel="preload" href="./assets/img/cover-title.png?v=3" as="image" />
+
+  <link rel="stylesheet" href="./styles/base.css?v=20261104" data-page-node-id="NXJIE1lnDLzxwV2MhWTV4n" />
+  <link rel="stylesheet" href="./styles/deck.css?v=20261104" data-page-node-id="BppsFIVx89iCmCFqItZ2kZ" />
+  <link rel="stylesheet" href="./styles/sections.css?v=20261104" data-page-node-id="7mJIujK3F4AOficqHIUYqw" />
+  <link rel="stylesheet" href="./styles/layouts.css?v=20261104" />
+  <link rel="stylesheet" href="./styles/site-chrome.css?v=20261104" />
+</head>
+<body data-page-node-id="oxwDPFkdR64qrXWo3Mvdo2">
+  <!-- 全局出版物式 Header：半透明白底 + blur + 极细底边线；含刊名 / 目录入口 / 当前页计数 -->
+  <header class="site-header" id="site-header">
+    <a class="site-brand" href="#/1">吴熙晔<span class="site-brand-en">· Portfolio</span></a>
+    <div class="site-meta">
+      <span class="site-label" id="site-label">封面</span>
+      <span class="site-num" id="site-num">01 / 20</span>
+      <button class="site-contents" id="contents-toggle" type="button"
+              aria-label="目录" aria-controls="contents-panel">
+        <span class="si-zh">目录</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 总目录面板：桌面右侧抽屉 / 移动端底部上滑 sheet（内容由 JS 依据 sections 构建） -->
+  <nav class="contents-panel" id="contents-panel" aria-label="目录" aria-hidden="true">
+    <div class="contents-head">
+      <span class="contents-head-zh">目录</span>
+      <button class="contents-close" id="contents-close" type="button" aria-label="关闭目录">×</button>
+    </div>
+    <div class="contents-body" id="contents-body"></div>
+  </nav>
+  <div class="contents-scrim" id="contents-scrim" aria-hidden="true"></div>
+
+  <!-- 自定义光标图层（Desktop 专用；Mobile 由 JS 转为 touch indicator） -->
+  <img class="site-cursor" id="site-cursor" src="./assets/img/cursor.png" alt="" aria-hidden="true" />
+
+  <!--
+    页面结构说明：
+    - .deck           整页浏览容器（类似 presentation 的视口）
+    - .deck-track     由 JS 平移的轨道，内部每一屏是一个 <section class="deck-section">
+    - 每个 section 由 scripts/sections/ 下的独立模块渲染，见 scripts/sections/index.js 注册表
+    - 后续新增页面 = 新建一个模块文件 + 在注册表里加一行，无需改动引擎
+  -->
+  <main class="deck" id="deck" aria-label="作品集" data-page-node-id="Ho3KGiqq7BOC2IrxmKmpUZ">
+    <div class="deck-track" id="deck-track" data-page-node-id="FGJolmoRxgbmwPe6UdMPfl">
+      <!-- sections 由 JS 模块注入 -->
+    </div>
+  </main>
+
+  <!-- 进度指示：桌面右侧圆点 / 移动端底部圆点，样式在 deck.css 中响应式处理 -->
+  <nav class="deck-dots" id="deck-dots" aria-label="页面导航" data-page-node-id="c2fGKDMP2y4UkLIZvfbqs2"></nav>
+
+  <script type="module" src="./scripts/main.js?v=20261104"></script>
+</body>
+</html>

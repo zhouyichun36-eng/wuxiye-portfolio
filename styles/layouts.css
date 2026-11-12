@@ -1,0 +1,726 @@
+/* ==========================================================================
+   layouts.css — Editorial Layout System（6 类 layout archetypes）
+   --------------------------------------------------------------------------
+   archetype 只决定「构图语言」（尺度关系、间距节奏、拼贴词汇），
+   不锁死任何页面的具体位置。每页可通过 section-specific CSS 调整：
+   image width / position / overlap / alignment / crop / spacing。
+
+   全局图片规则（Neutral Canvas, Color from Content）：
+   - 图片默认无圆角、无阴影、无边框、无底版
+   - 不加 mockup / browser / phone / polaroid / glass frame
+   - 页面的颜色来自作品本身
+   ========================================================================== */
+
+/* ————————————————————————————————————————————
+   共享构图词汇（所有 archetype 可调用的 utility）
+   ———————————————————————————————————————————— */
+
+/* 图片宽度尺度（桌面）：大小悬殊是编辑感的来源 */
+.iw-30 { width: 30%; }
+.iw-40 { width: 40%; }
+.iw-50 { width: 50%; }
+.iw-60 { width: 60%; }
+.iw-70 { width: 70%; }
+.iw-80 { width: 80%; }
+
+/* 摆放方向（默认靠左，沿文字栏） */
+.place-r { margin-left: auto; }
+.place-c { margin-left: auto; margin-right: auto; }
+
+/* 局部越界：向上叠入上一个元素（桌面有效，移动端自动解除） */
+.up-1 { margin-top: calc(var(--s-4) * -1); }
+.up-2 { margin-top: calc(var(--s-5) * -1); }
+
+/* 极克制的旋转（scrapbook 感，幅度 ≤1.6deg） */
+.rt--1 { transform: rotate(-0.8deg); }
+.rt-1  { transform: rotate(0.8deg); }
+.rt-2  { transform: rotate(1.6deg); }
+
+/* 突破页面留白、接近 viewport 边缘（单页点睛用，不滥用） */
+.edge-r { margin-right: calc(var(--pad-x) * -1); }
+.edge-l { margin-left: calc(var(--pad-x) * -1); }
+
+/* annotation：从资料/图片中抽出的重点信息（出版物边注） */
+.anno {
+  max-width: 16em;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--gray-60);
+  padding-top: var(--s-1);
+  border-top: 1px solid var(--line);
+}
+
+/* ————————————————————————————————————————————
+   PHONE DEVICE — 全站唯一标准手机框（用户指定素材）
+   结构（三层，独立图层，禁止旧框 / CSS 模拟框 / 其他 device mockup）：
+     .phone-device      容器（aspect 由 phone-frame.png 实测决定）
+       .phone-screen    屏幕视口（内容只出现在这里，overflow 裁切）
+         img            截图（见 fit-* 三种适配）
+       .phone-overlay   透明手机框 PNG，覆盖最上层
+   屏幕视口参数由 phone-frame.png 实测得出，集中维护在本组件，
+   各 section 一律通过 iw-* 控制整体大中小等比例缩放，不单独写 inset。
+   —— 实测：phone 外框 629×1306；screen hole L5.246% T2.067% R5.087% B2.221%（w89.825% h95.789%），
+      屏幕圆角约 12.5% / 6%。
+   ———————————————————————————————————————————— */
+.phone-device {
+  position: relative;
+  aspect-ratio: 629 / 1306;
+  width: 100%;
+}
+.phone-screen {
+  position: absolute;
+  left: 5.246%; top: 2.067%;
+  width: 89.825%; height: 95.789%;
+  overflow: hidden;
+  border-radius: 12.5% / 6%;   /* 贴合屏幕圆角，避免直角穿出描边 */
+}
+.phone-screen img { display: block; width: 100%; height: 100%; }
+.phone-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* ———— Phone screenshot 三种适配（禁止默认 object-fit:cover 盲目铺满） ———— */
+/* A. STANDARD：正常手机截图 — 完整显示、原始比例、不裁切、居中，可少量留白 */
+.phone-device.fit-standard .phone-screen img { object-fit: contain; object-position: center; }
+/* B. TALL：比标准屏幕略长的截图 — 保持阅读宽度，顶部对齐，底部超出自然裁掉 */
+.phone-device.fit-tall .phone-screen img { width: 100%; height: auto; object-fit: cover; object-position: center top; }
+/* C. LONG：公众号超长图 — 匹配屏幕宽度、保持比例、顶部对齐向下延伸，屏幕只露当前一屏 */
+.phone-device.fit-long .phone-screen { overflow: hidden; }
+.phone-device.fit-long .phone-screen img { width: 100%; height: auto; object-fit: cover; object-position: center top; }
+
+/* 兼容旧引用：.std-phone 映射到新组件 */
+.std-phone { position: relative; aspect-ratio: 629 / 1306; width: 100%; }
+
+/* ————————————————————————————————————————————
+   LONG-FORM — 公众号长图 / 长内容的 full piece 展示
+   保持真实纵向比例，作为「明显偏长的视觉对象」存在；
+   允许向页面下方延伸，不压缩进一屏、不套手机框。
+   搭配 detail crop（从同一长图裁切的局部放大）使用。
+   ———————————————————————————————————————————— */
+.figure--longform { align-self: flex-start; }
+.figure--longform img { width: 100%; height: auto; }
+
+/* Mobile：拼贴简化但保留视觉关系——小图保持小、错位保留、重叠解除 */
+@media (max-width: 767px) {
+  .iw-50, .iw-60, .iw-70, .iw-80 { width: 100%; }
+  .iw-30 { width: 62%; }
+  .iw-40 { width: 76%; }
+  .up-1, .up-2 { margin-top: var(--s-3); }
+  .edge-r, .edge-l { margin-left: 0; margin-right: 0; }
+  .rt--1, .rt-1, .rt-2 { transform: none; }
+}
+
+/* ————————————————————————————————————————————
+   INTERACTION PASS（Phase 13 — 统一全站图片 / 手机框 Hover）
+   —— Paper Hover 已统一为 media-hover：所有图片 + 手机框共用一套轻微物理反馈。
+   scripts/interactions/media-hover.js 启动时给目标加 .media-hover；
+   mouseenter / mouseleave → .is-hover；mobile tap → .is-tap。
+   只用 transform；不加阴影 / 发光 / 模糊；不改变 layout / width / margin。
+   ———————————————————————————————————————————— */
+
+/* 基础：所有 figure.img-slot + .phone-device 都启用 320ms 平滑过渡
+   —— 用 .deck-section 前缀提升特异性，覆盖 .anim-in 的 520ms transition。
+      否则 .anim-in 的 transform: none 会盖掉 hover 的位移 + scale。 */
+.deck-section .media-hover {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* Desktop Hover：默认幅度
+   —— 选择器前缀 .deck-section.is-active 提高特异性，
+      覆盖 figure.img-slot.anim-in 的 transform: none 入场态，
+      确保 hover transform 真正生效。 */
+.deck-section.is-active .media-hover.is-hover {
+  transform: translateY(-3px) scale(1.015) rotate(0deg);
+}
+
+/* Cutout modifier：透明抠图素材（人物/手账/建筑/产品/插画）幅度更轻 */
+.deck-section.is-active .media-hover--cutout.is-hover {
+  transform: translateY(-2px) scale(1.013) rotate(0deg);
+}
+
+/* Phone modifier：整体手机设备（框 + 截图）一起轻微弹动
+   内部 .phone-screen img 不单独 transform；作为子元素随父级一起动。*/
+.deck-section.is-active .media-hover--phone.is-hover {
+  transform: translateY(-3px) scale(1.015);
+}
+
+/* Mobile Tap：一次轻触感反馈
+   —— keyframes 通过 !important 确保覆盖 anim-in 的 transform: none。 */
+.deck-section.is-active .media-hover.is-tap {
+  animation: media-hover-tap 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.deck-section.is-active .media-hover--cutout.is-tap {
+  animation: media-hover-tap-cutout 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes media-hover-tap {
+  0%   { transform: translateY(0)    scale(1) !important; }
+  50%  { transform: translateY(-2px) scale(1.015) !important; }
+  100% { transform: translateY(0)    scale(1) !important; }
+}
+@keyframes media-hover-tap-cutout {
+  0%   { transform: translateY(0)     scale(1) !important; }
+  50%  { transform: translateY(-1.5px) scale(1.01) !important; }
+  100% { transform: translateY(0)     scale(1) !important; }
+}
+
+/* Archive Spread 起点（PART 08 + 09）：
+   JS 在初次进入 viewport 时注入 transform 起始态 → 触发 transition 散开。
+   [data-spread-init] 在过渡期锁住 transition，避免被 hover 干扰。 */
+.research-detail .img-slot[data-spread-init],
+.specimen-collection .img-slot[data-spread-init],
+.journal-spread .img-slot[data-spread-init] {
+  transition: none !important;
+}
+
+/* ————————————————————————————————————————————
+   统一标题 anchor（PART 02）
+   大标题不贴最左、也不居中：偏左但向内移一个稳定距离，
+   形成全站一致的翻页节奏。Desktop / Mobile 同一逻辑。
+   ———————————————————————————————————————————— */
+:root { --title-inset: clamp(0rem, 8vw, 9rem); }
+@media (max-width: 767px) { :root { --title-inset: clamp(0.5rem, 5vw, 1.5rem); } }
+.project-head,
+.divider-compose,
+.about-head,
+.toc-title { margin-left: var(--title-inset); }
+
+/* kicker：中文项目名 + 英文小字（无竖线，英文仅说明）
+   Phase 17：中文项目名 kicker-zh 500→600；英文 kicker-en 400→500 */
+.page-kicker .kicker-zh { font-weight: 600; }
+.page-kicker .kicker-en {
+  font-size: 0.82em;
+  letter-spacing: var(--ls-kicker);
+  margin-left: 0.9em;
+  font-weight: 500;
+}
+
+/* 项目/篇目名（nameTitle）：中文主标题 + 英文辅助小字，无竖线
+   Phase 17：中文 nt-zh 500→600；英文 nt-en 留空 inherited */
+.nt-zh { font-weight: 600; }
+.nt-en {
+  font-size: 0.78em;
+  letter-spacing: var(--ls-kicker);
+  margin-left: 0.9em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ————————————————————————————————————————————
+   全幅资料图（P14 Research）：页面最大视觉主体
+   ———————————————————————————————————————————— */
+.img-slot--full { width: 100%; }
+@media (max-width: 767px) {
+  .img-slot--full {
+    margin-left: calc(var(--pad-x) * -1);
+    margin-right: calc(var(--pad-x) * -1);
+    width: calc(100% + var(--pad-x) * 2);
+    max-width: none;
+  }
+}
+
+/* ————————————————————————————————————————————
+   WORKS ROW — 多条完整作品并列成组（如 P11 三条推文）
+   每条保持完整真实比例，尺寸小但全部出现；
+   Mobile 同样整组可见，不裁切、不换行堆叠。
+   ———————————————————————————————————————————— */
+.works-row {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(0.75rem, 2vw, 2rem);
+  margin-top: var(--s-4);
+}
+.works-row .img-slot { margin-top: 0; flex: 1 1 0; width: auto; min-width: 0; }
+.works-row .img-slot img { width: 100%; height: auto; }
+
+/* ————————————————————————————————————————————
+   SPECIMEN — 整齐的小尺寸抠图陈列（archive / specimen collection）
+   透明素材直接浮在白底上，统一观看方向，保留空白；
+   不是九宫格卡片（无底板、无边框、无圆角）。
+   ———————————————————————————————————————————— */
+.specimen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: clamp(1rem, 3vw, 2.75rem) clamp(0.75rem, 2vw, 1.75rem);
+  margin-top: var(--s-4);
+}
+.specimen .img-slot { margin-top: 0; width: 17%; min-width: 0; }
+.specimen .img-slot img { width: 100%; height: auto; }
+@media (max-width: 767px) {
+  .specimen .img-slot { width: 29%; }
+}
+
+/* ————————————————————————————————————————————
+   SPECIMEN COLLECTION（P16 建筑 / 类似 archive）
+   非等大 grid：一张稍大、若干较小、2–3 种尺寸 + 上下轻微错位 + 充分留白。
+   透明素材直接浮白底，统一观看方向；保留矩形作品时靠尺寸与位置形成编辑构图。
+   ———————————————————————————————————————————— */
+.specimen-collection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(1.25rem, 5vh, 3.5rem) clamp(0.75rem, 3vw, 2.5rem);
+  margin-top: var(--s-4);
+}
+.specimen-collection .img-slot { margin-top: 0; }
+.specimen-collection .img-slot img { width: 100%; height: auto; }
+.sc-lg { width: 34%; }
+.sc-md { width: 22%; }
+.sc-sm { width: 14%; }
+.sc-d1 { margin-top: 1.75rem; }   /* 向下轻微错位 */
+.sc-d2 { margin-top: 3.5rem; }    /* 再往下，形成 archive 节奏 */
+@supports not (margin-top: 1.75rem) { /* noop 兼容 */ }
+@media (max-width: 767px) {
+  .specimen-collection { gap: clamp(1rem, 4vw, 2rem) clamp(0.6rem, 3vw, 1.5rem); }
+  .sc-lg { width: 48%; }
+  .sc-md { width: 34%; }
+  .sc-sm { width: 25%; }
+  .sc-d1, .sc-d2 { margin-top: 0; }  /* 移动端收敛错位，避免溢出 */
+}
+
+/* ————————————————————————————————————————————
+   JOURNAL SPREAD（P19 手账 / Personal Archive）
+   一张略大 + 其余较小，轻微错位，形成「在桌面摊开的一整组长期创作」；
+   不做规则九宫格、不统一卡片、不随意大角度旋转；保留充分留白。
+   ———————————————————————————————————————————— */
+.journal-spread {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(0.9rem, 4vh, 2.5rem) clamp(0.5rem, 2.5vw, 1.75rem);
+  margin-top: var(--s-3);
+}
+.journal-spread .img-slot { margin-top: 0; }
+.journal-spread .img-slot img { width: 100%; height: auto; }
+.j-lg { width: 27%; }
+.j-md { width: 19%; }
+.j-sm { width: 13%; }
+.j-d1 { margin-top: 1.5rem; }
+.j-d2 { margin-top: 3rem; }
+@media (max-width: 767px) {
+  .journal-spread { gap: clamp(0.8rem, 4vw, 2rem) clamp(0.5rem, 3vw, 1.25rem); }
+  .j-lg { width: 42%; }
+  .j-md { width: 31%; }
+  .j-sm { width: 23%; }
+  .j-d1, .j-d2 { margin-top: 0; }
+}
+
+/* ————————————————————————————————————————————
+   ARCHIVE — 个人作品多图陈列（如 P19 手账）
+   一张较大 lead + 其余小尺寸整齐排列；
+   经过编辑整理的个人 archive，不是商品网格。
+   ———————————————————————————————————————————— */
+.archive {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(0.6rem, 1.4vw, 1.25rem);
+  margin-top: var(--s-3);
+}
+.archive .img-slot { margin-top: 0; width: 18.5%; min-width: 0; }
+.archive .img-slot img { width: 100%; height: auto; }
+@media (max-width: 767px) {
+  .archive .img-slot { width: 31%; }
+}
+
+/* ————————————————————————————————————————————
+   LAYOUT A — SECTION OPENER｜章节过渡页
+   中文 = 最大主标题；英文 = 明显更小的辅助信息；
+   一句说明 + 大量留白（空白即构图）。
+
+   本轮（Phase 16）：插画重定位 + 大幅放大。
+   - 位置：标题右侧偏上方（不再放在标题下方偏右）
+   - 用 CSS Grid 把标题组与插画分两列：
+       col 1 = num/zh/en/desc（文字组）
+       col 2 = illustration（横跨 row 1-2，让插画顶部 ≈ 编号顶部）
+   - 插画顶部加微小负 margin-top 让它视觉上比编号顶还略偏上一档
+   ———————————————————————————————————————————— */
+.layout-section-opener { justify-content: flex-end; }
+.layout-section-opener .divider-compose {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;   /* 文字组 | 插画 */
+  align-items: start;
+  column-gap: clamp(2rem, 7vw, 7rem);           /* 标题 ↔ 插画：充足横向留白 */
+  padding-bottom: 8vh;
+}
+.layout-section-opener .divider-num    { grid-column: 1; grid-row: 1; }
+.layout-section-opener .divider-zh     { grid-column: 1; grid-row: 2; }
+.layout-section-opener .divider-en     { grid-column: 1; grid-row: 3; }
+.layout-section-opener .divider-desc   { grid-column: 1; grid-row: 4; }
+
+.layout-section-opener .divider-num {
+  font-size: var(--fs-nav);
+  letter-spacing: var(--ls-kicker);
+  margin-bottom: var(--s-2);
+  font-weight: 500;
+}
+.layout-section-opener .divider-zh {
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;                              /* Phase 17：中文大标题 500→700 */
+  max-width: 14em;
+}
+.layout-section-opener .divider-en {
+  margin-top: var(--s-2);
+  font-size: var(--fs-subtitle);
+  letter-spacing: var(--ls-kicker);
+  line-height: var(--lh-title);
+  font-weight: 500;                              /* Phase 17：400→500（弱于中文） */
+}
+.layout-section-opener .divider-desc {
+  margin-top: var(--s-1);
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-title);
+  max-width: var(--measure);
+  font-weight: 500;                              /* Phase 17：描述 400→500 */
+}
+
+/* ————————————————————————————————————————————
+   章节轻插画（透明线稿，editorial annotation / 第二视觉）
+
+   Anchor（Phase 16）：
+   - 位于「中文大标题」右侧、跨编号 + 中文标题两行；
+   - align-self: start 让顶部对齐 row 1 顶部（≈ 编号顶部）；
+   - 顶部再加一点负 margin-top 让它视觉上"略高于标题视觉中心"（"偏上方"）；
+   - 不与中文标题 / 英文副标题重叠（col-gap 已保证）；
+   - 大量留白（column-gap ≥ 7vw）；不顶到 .page 右 padding-x。
+
+   尺寸（Phase 16 — 约放大到当前 5 倍，按视觉体积分配）：
+   - 当前为 fs-section × (1.18 / 1.25 / 1.38) ≈ 90 / 95 / 105px@Desktop。
+   - 新高度 clamp() 让横向/方形/纵向三档视觉重量均衡：
+       .df-l（横向：ill-01 咖啡杯 w/h≈1.42）→ 略小（宽度已补偿）
+       .df-m（方形：ill-02 胶带 / ill-03 放大镜 w/h≈1.0–1.1）→ 默认
+       .df-t（纵向：ill-04 铅笔 / ill-05 手账 w/h≈0.6–0.8）→ 略大
+   - 不做 Hero、无容器/边框/阴影/底板；Hover 沿用全站 media-hover--cutout。
+   ———————————————————————————————————————————— */
+.layout-section-opener .divider-illustration {
+  grid-column: 2;
+  grid-row: 1 / span 2;                         /* 跨编号 + 中文标题两行 */
+  align-self: start;                            /* 顶部对齐 row 1 top */
+  justify-self: end;                            /* 靠右 */
+  width: auto;
+  margin-top: clamp(-0.75rem, -1.5vh, -0.25rem); /* 比编号顶再略偏上一档 */
+  margin-right: 0;
+}
+.layout-section-opener .divider-illustration img {
+  display: block;
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Desktop 1440 视窗：当前 = fs-section(≈76) × (1.18–1.38) ≈ 90–105px
+   ≈5 倍目标 ≈ 450 / 475 / 525px → 用 vw 锚定，clamp 做上下限。
+   横向图(df-l)用略小高度，其宽幅本来就在撑体积；方形(df-m)/纵向(df-t)
+   提到 ~4.5 倍，让五张「肉眼同一个量级」。 */
+.layout-section-opener .divider-illustration.df-l {
+  height: clamp(13rem, 22vw, 21rem);            /* 横向图：宽幅自然补偿 */
+}
+.layout-section-opener .divider-illustration.df-m {
+  height: clamp(16rem, 30vw, 28rem);            /* 方形图：≈4.5 倍体积 */
+}
+.layout-section-opener .divider-illustration.df-t {
+  height: clamp(18rem, 33vw, 31rem);            /* 纵向图：高度补足，≈4.5 倍 */
+}
+
+/* Mobile：保留「标题右偏上」的逻辑，但宽度收窄、不挤坏标题、不横向溢出 */
+@media (max-width: 767px) {
+  .layout-section-opener .divider-compose {
+    /* 与桌面同构，只是把 gap 收窄、列宽自适应 */
+    column-gap: clamp(0.5rem, 2.5vw, 1rem);
+    padding-bottom: 6vh;
+  }
+  /* 插画在 Mobile 上向右收一点，不再跨两行（避免过宽压文字） */
+  .layout-section-opener .divider-illustration {
+    grid-row: 2;                                /* 与中文标题同行，顶部对齐 */
+    max-width: 42vw;                            /* 防止挤压文字 */
+    margin-top: 0;
+  }
+  .layout-section-opener .divider-illustration.df-l {
+    height: clamp(7.5rem, 30vw, 12rem);         /* ≈ 117–192px @390 */
+  }
+  .layout-section-opener .divider-illustration.df-m {
+    height: clamp(8rem, 33vw, 13rem);
+  }
+  .layout-section-opener .divider-illustration.df-t {
+    height: clamp(8.5rem, 36vw, 14rem);
+  }
+}
+
+/* ————————————————————————————————————————————
+   LAYOUT B — PROJECT INTRO｜项目介绍页
+   大项目标题 + subtitle + 文字块 + 1 张主图锚点（+1–2 张小图）
+   尺度反差：主图明显大，小图作为注释；不机械左右对半
+   ———————————————————————————————————————————— */
+.layout-project-intro .img-slot--hero { width: 64%; }
+.layout-project-intro .img-slot:not(.img-slot--hero) { width: 34%; }
+@media (max-width: 767px) {
+  .layout-project-intro .img-slot--hero { width: 100%; }
+  .layout-project-intro .img-slot:not(.img-slot--hero) { width: 68%; }
+}
+
+/* ————————————————————————————————————————————
+   LAYOUT C — DATA / PERFORMANCE｜成果与数据页
+   数据直接成为 typography：数字放大为构图主体，
+   截图/后台界面作为资料碎片嵌在数字周围。无 KPI 卡片。
+   ———————————————————————————————————————————— */
+.layout-performance .data-num { font-size: var(--fs-display); }
+.layout-performance .data-row { align-items: flex-end; }
+.layout-performance .img-slot { width: 40%; }
+@media (max-width: 767px) {
+  .layout-performance .img-slot { width: 84%; }
+}
+
+/* ————————————————————————————————————————————
+   LAYOUT D — EDITORIAL COLLAGE｜作品拼贴页
+   最接近 naze naze 的页面类型：无统一 grid、无卡片、
+   图片像被「摆放」在页面里（scrapbook / editorial spread）
+   具体位置由每页用共享词汇（iw-* / place-* / up-* / rt-*）组合
+   ———————————————————————————————————————————— */
+.layout-editorial-collage .img-slot--hero { width: 72%; }
+@media (max-width: 767px) {
+  .layout-editorial-collage .img-slot--hero { width: 100%; }
+}
+
+/* ————————————————————————————————————————————
+   LAYOUT E — RESEARCH / ARCHIVE｜资料与研究页
+   大面积真实资料截图可成为页面最大视觉元素；
+   2–3 个重点信息以 annotation 抽出。保留工作痕迹，
+   不重做成 infographic。
+   ———————————————————————————————————————————— */
+.layout-research-archive .img-slot--hero { width: 88%; }
+@media (max-width: 767px) {
+  .layout-research-archive .img-slot--hero { width: 100%; }
+}
+
+/* ————————————————————————————————————————————
+   LAYOUT F — PERSONAL GALLERY｜个人作品展示
+   图片占主导、自由混排、允许一张突然很大；
+   不是 Behance Gallery，不是九宫格
+   ———————————————————————————————————————————— */
+.layout-personal-gallery .img-slot--hero { width: 88%; }
+@media (max-width: 767px) {
+  .layout-personal-gallery .img-slot--hero { width: 100%; }
+}
+
+/* ==========================================================================
+   2026-11 重构（20页 → 11页）新增构件
+   P02 About 索引 / P03 作品地图 / P04–P10 共用 case 词汇 /
+   P06 流程 + publication clipping + overlay / P11 极简结尾
+   ========================================================================== */
+
+/* ————————————————————————————————————————————
+   P02 ABOUT —— 人物一侧 + 文字一侧大留白 + 能力出版物索引
+   ———————————————————————————————————————————— */
+.layout-about .about-compose {
+  display: grid;
+  grid-template-columns: minmax(0, 30%) minmax(0, 1fr);
+  column-gap: clamp(2.5rem, 7vw, 8rem);
+  align-items: start;
+}
+.layout-about .about-compose .img-slot { width: 100%; margin-top: 0; }
+.layout-about .about-text { max-width: 34rem; }
+.layout-about .about-title { margin-top: var(--s-2); }
+.layout-about .about-lede { margin-top: var(--s-1); }
+.layout-about .about-body { margin-top: var(--s-4); max-width: 30em; }
+.layout-about .about-body p + p { margin-top: 0.9em; }
+.about-questions {
+  margin-top: var(--s-4);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--line);
+  max-width: 30em;
+}
+.about-questions .aq-list {
+  margin-top: 0.6em;
+  line-height: 1.9;
+  font-weight: 500;
+}
+/* 能力索引：出版物 index 式（细线分行，无卡片） */
+.caps-index { margin-top: var(--s-5); max-width: 34rem; }
+.caps-head {
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  font-weight: 600;
+  margin-bottom: var(--s-2);
+}
+.caps-row {
+  display: grid;
+  grid-template-columns: minmax(10em, 40%) 1fr;
+  column-gap: var(--s-3);
+  align-items: baseline;
+  padding: 0.55em 0;
+  border-top: 1px solid var(--line);
+}
+.caps-row:last-child { border-bottom: 1px solid var(--line); }
+.caps-term { font-weight: 600; font-size: var(--fs-subtitle); }
+.caps-desc {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--gray-60);
+}
+@media (max-width: 767px) {
+  .layout-about .about-compose { grid-template-columns: 1fr; }
+  .layout-about .about-compose .img-slot { width: min(56vw, 18rem); margin-bottom: var(--s-3); }
+  .caps-row { grid-template-columns: 1fr; row-gap: 0.15em; }
+}
+
+/* ————————————————————————————————————————————
+   P03 SELECTED WORK —— 作品地图：4 个方向，编号大小/位置错落，大量垂直留白
+   ———————————————————————————————————————————— */
+.page-selected-work .work-map { margin-top: var(--s-5); }
+.work-map-item {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: var(--s-3) 0;
+  max-width: 40rem;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.deck-section.is-active .work-map-item:hover { transform: translateY(-3px); }
+.wm-num {
+  display: block;
+  font-size: var(--fs-display);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.wm-en {
+  display: block;
+  margin-top: var(--s-2);
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;
+}
+.wm-desc {
+  display: block;
+  margin-top: var(--s-2);
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-title);
+  color: var(--gray-60);
+  max-width: 30em;
+  font-weight: 500;
+}
+/* 四条目：不同横向位置 + 编号大小差异（编辑式节奏，非表格） */
+@media (min-width: 768px) {
+  .wm-a { margin-left: 0; }
+  .wm-b { margin-left: clamp(3rem, 14vw, 18rem); }
+  .wm-b .wm-num { font-size: calc(var(--fs-display) * 0.82); }
+  .wm-c { margin-left: clamp(1rem, 5vw, 6rem); }
+  .wm-c .wm-num { font-size: calc(var(--fs-display) * 0.68); }
+  .wm-d { margin-left: clamp(4rem, 20vw, 26rem); }
+  .wm-d .wm-num { font-size: calc(var(--fs-display) * 0.82); }
+}
+@media (max-width: 767px) {
+  .wm-num { font-size: clamp(2.6rem, 11vw, 3.6rem); }
+  .wm-en { font-size: clamp(1.25rem, 5.4vw, 1.7rem); }
+  .work-map-item { max-width: 100%; }
+  .wm-b, .wm-d { margin-left: 8vw; }
+  .wm-c { margin-left: 3vw; }
+}
+
+/* ————————————————————————————————————————————
+   P04–P10 共用 case 词汇：项目区标题 / 一句说明 / 焦点文案 / 结果句
+   ———————————————————————————————————————————— */
+.case-block { margin-top: var(--s-5); max-width: 34rem; }
+.case-block:first-of-type { margin-top: var(--s-4); }
+.case-title { font-size: var(--fs-subtitle); font-weight: 600; }
+.case-one { margin-top: var(--s-2); line-height: var(--lh-body); max-width: 30em; }
+.case-sub { margin-top: 0.9em; line-height: var(--lh-body); max-width: 30em; color: var(--gray-60); }
+.case-focus { margin-top: var(--s-4); max-width: 30em; }
+.case-focus > p:first-child { color: var(--gray-60); font-size: var(--fs-subtitle); line-height: var(--lh-title); }
+.focus-quote {
+  margin-top: var(--s-2);
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  font-weight: 700;
+  letter-spacing: var(--ls-display);
+}
+.focus-title { margin-top: var(--s-1); font-weight: 500; font-size: var(--fs-subtitle); }
+.case-result {
+  margin-top: var(--s-5);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--line);
+  max-width: 30em;
+  font-weight: 500;
+  line-height: var(--lh-body);
+}
+
+/* ————————————————————————————————————————————
+   P06 FESTIVAL —— 流程行 / 雨天注 / publication clipping / overlay
+   ———————————————————————————————————————————— */
+.flow-line { line-height: 2; }
+.flow-arrow { color: var(--gray-60); margin: 0 0.35em; }
+.rain-note {
+  margin-top: var(--s-4);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+.rain-note .img-slot { margin-top: 0; }
+.rain-note .rain-anno { margin-top: 0; }
+@media (max-width: 767px) {
+  .rain-note { flex-direction: column; }
+  .rain-note .img-slot { width: 62%; }
+}
+/* publication clipping：报道截图 + 小 caption，可点击查看全文 */
+.clip { cursor: pointer; }
+.clip img { display: block; width: 100%; height: auto; }
+.clip-cap {
+  margin-top: var(--s-1);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--gray-60);
+}
+.clip-kicker {
+  font-weight: 600;
+  letter-spacing: var(--ls-kicker);
+  color: inherit;
+}
+/* 全文 overlay：白底、居中、可滚动；打开时 deck 已由 is-contents-open 锁定 */
+.coverage-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.97);
+  overflow-y: auto;
+  padding: 5vh 5vw 8vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  cursor: zoom-out;
+}
+.coverage-overlay.is-open { opacity: 1; }
+.coverage-overlay img {
+  width: min(92vw, 620px);
+  height: auto;
+  display: block;
+}
+.cov-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: 1.25rem;
+  font-size: 1.75rem;
+  line-height: 1;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* ————————————————————————————————————————————
+   P11 CONTACT —— 极简结尾补充
+   ———————————————————————————————————————————— */
+.contact-hope { margin-top: var(--s-4); max-width: 26em; }
+.contact-hope p + p { margin-top: 0.9em; }
+.contact-hope p:first-child { color: var(--gray-60); font-size: var(--fs-caption); letter-spacing: var(--ls-caption); }

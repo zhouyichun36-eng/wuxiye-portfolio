@@ -1,0 +1,364 @@
+/* ==========================================================================
+   site-chrome.css — 全局出版物式 Chrome（Phase 14）
+   --------------------------------------------------------------------------
+   固定 Publication Header（半透明白底 + blur + 极细底边线）、
+   总目录面板（Contents）、自定义光标图层、首次滑动引导（scroll hint）。
+   全部延续白底黑字、克制、出版物感；不破坏既有视觉系统。
+   ========================================================================== */
+
+/* ————————————————————————————————————————————
+   GLOBAL HEADER — 半透明白底，解决固定栏与下方内容重叠
+   —— rgba(255,255,255,.9) + backdrop-blur + 极细底边线；文字保持纯黑。
+   —— 封面（P01）时淡出隐藏（封面有独立刊名，避免重复 & 保持封面纯净）。
+   ———————————————————————————————————————————— */
+.site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: 0.8rem clamp(1.25rem, 4vw, 3.5rem);
+  /* 刘海屏 / 灵动岛安全区：避免 Header 内容顶入状态栏 */
+  padding-top: calc(0.8rem + env(safe-area-inset-top, 0px));
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(12px) saturate(1.05);
+  backdrop-filter: blur(12px) saturate(1.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  transition: opacity 300ms var(--ease-standard), transform 300ms var(--ease-standard);
+  will-change: opacity, transform;
+}
+.site-header.is-on-cover {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+.site-brand {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: var(--fs-nav);
+  letter-spacing: 0.16em;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-brand-en {
+  margin-left: 0.35em;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+.site-meta {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2.2vw, 2rem);
+}
+.site-label {
+  font-size: var(--fs-nav);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--ink);
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-num {
+  font-size: var(--fs-nav);
+  letter-spacing: var(--ls-kicker);
+  font-variant-numeric: tabular-nums;
+  color: var(--gray-40);
+  white-space: nowrap;
+}
+/* 固定栏"目录"入口 —— 现在中文主导（Phase 17）
+   只显示中文"目录"，取消 si-en 英文。
+   与正文统一字号让它和发布项标签同时处于收口状态。 */
+.site-contents {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55em;
+  padding: 0.4rem 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.site-contents .si-zh {
+  font-size: var(--fs-subtitle);       /* 与 site-label / site-num 同号档，略大，更像入口 */
+  letter-spacing: 0.06em;
+  font-weight: 500;                     /* 中文清晰但克制，不抢当前页标签 */
+}
+.site-contents:hover .si-zh {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ————————————————————————————————————————————
+   CONTENTS PANEL（总目录）
+   —— Desktop 右侧抽屉 / Mobile 底部上滑 sheet。
+   —— 白底黑字、出版物感；按章节分组；当前页高亮。
+   ———————————————————————————————————————————— */
+.contents-panel {
+  position: fixed;
+  z-index: 90;
+  top: 0; bottom: 0; right: 0;
+  width: min(420px, 86vw);
+  background: var(--paper);
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  transform: translateX(102%);
+  transition: transform 420ms var(--ease-standard);
+  visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -1.5rem 0 3rem rgba(0, 0, 0, 0.06);
+}
+.contents-panel.is-open { transform: translateX(0); visibility: visible; }
+
+.contents-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8em;
+  padding: 1.4rem 1.5rem 1.1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+/* Phase 17：contents-head 只显示中文"目录"，作为面板第一视觉 */
+.contents-head-zh {
+  font-size: var(--fs-section);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;                    /* 与全站大标题统一为第一视觉字重 */
+}
+.contents-close {
+  margin-left: auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.contents-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.6rem 1.5rem 2.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-40) transparent;
+}
+
+/* Phase 17：取消章节分组，按用户要求只列 5 个大章节
+   —— 不再需要 .contents-chap；分组小标题已删除 */
+.contents-chap { display: none; }
+
+/* 5 项目录条目：中文（前）+ 英文（后），中文更大更粗
+   布局：数字 + 中文（第一行，中文单行不折行）
+         英文（第二行，紧随中文之后、更小更弱，作为辅助识别） */
+.contents-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 0.85em;
+  row-gap: 0.28em;
+  width: 100%;
+  text-align: left;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.95rem 0;                  /* 每项之间明显呼吸感 */
+  font-family: var(--font-sans);
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: padding-left 200ms var(--ease-standard);
+}
+.contents-item + .contents-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);    /* 极弱分隔，仅建层级，仍是纸面感 */
+}
+.contents-item .ci-num {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  color: var(--gray-40);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2em;
+  font-weight: 500;
+}
+.contents-item .ci-zh {
+  grid-column: 2;
+  grid-row: 1;
+  font-weight: 700;                              /* Phase 17：500→700（中文第一视觉） */
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  letter-spacing: -0.01em;
+  white-space: nowrap;                            /* 中文单行，不折行 */
+}
+.contents-item .ci-en {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: var(--fs-caption);                   /* 明显小于中文 */
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--gray-60);                          /* 比中文略弱（仍纯黑，靠 size/weight 区分） */
+  font-weight: 500;
+  white-space: nowrap;
+}
+.contents-item:hover { padding-left: 0.5rem; }
+
+/* 当前章节高亮（Phase 17 — 不使用颜色，仅字重 + 下划线） */
+.contents-item.is-current .ci-num { color: var(--ink); font-weight: 600; }
+.contents-item.is-current .ci-zh {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 1px;
+}
+.contents-item.is-current .ci-en { color: var(--ink); }
+
+/* 遮罩 */
+.contents-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms var(--ease-standard);
+}
+.contents-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+/* Mobile：底部上滑 sheet */
+@media (max-width: 767px) {
+  /* 触控区域 ≥44px：加大目录入口按钮点击范围（视觉不变） */
+  .site-contents { padding: 0.7rem 0.3rem; }
+  /* Header 窄屏防挤压：当前页标签收窄，目录按钮不换行 */
+  .site-label { max-width: 7em; }
+  .site-contents { white-space: nowrap; flex: 0 0 auto; }
+  .site-brand { flex: 0 0 auto; }
+  .site-meta { min-width: 0; }
+  .contents-panel {
+    top: auto; left: 0; right: 0;
+    width: 100%;
+    height: min(72svh, 640px);
+    border-left: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(105%);
+    box-shadow: 0 -1.5rem 3rem rgba(0, 0, 0, 0.08);
+  }
+  .contents-panel.is-open { transform: translateY(0); }
+  .contents-head { padding-top: 1rem; }
+  /* 顶部小拖拽条 */
+  .contents-head::before {
+    content: "";
+    position: absolute;
+    top: 0.5rem; left: 50%;
+    transform: translateX(-50%);
+    width: 2.5rem; height: 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.18);
+  }
+  .contents-head { position: relative; }
+}
+
+/* ————————————————————————————————————————————
+   CUSTOM CURSOR 图层 / Mobile touch indicator
+   —— 指针笔尖大致对准鼠标（尖端约位于图宽 25% 处）；
+   —— hover 可交互元素时轻微放大；Mobile 以 .is-tap 短暂出现。
+   ———————————————————————————————————————————— */
+.site-cursor {
+  position: fixed;
+  z-index: 120;
+  width: clamp(30px, 3vw, 42px);
+  height: auto;
+  left: -100px; top: -100px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(var(--cx, -11px), 0) rotate(-4deg);
+  transition: transform 240ms var(--ease-standard), opacity 200ms var(--ease-standard);
+  will-change: transform, left, top;
+  -webkit-user-select: none; user-select: none;
+}
+.site-cursor.is-on { opacity: 0.9; }
+.site-cursor.is-hover {
+  transform: translate(var(--cx, -11px), 0) rotate(-2deg) scale(1.16);
+}
+.site-cursor.is-tap {
+  opacity: 0.85;
+  animation: cursor-tap 250ms var(--ease-standard);
+}
+@keyframes cursor-tap {
+  0%   { opacity: 0; transform: translate(var(--cx, -11px), 0) rotate(-4deg) scale(1.25); }
+  60%  { opacity: 0.9; transform: translate(var(--cx, -11px), 0) rotate(-4deg) scale(0.96); }
+  100% { opacity: 0; transform: translate(var(--cx, -11px), 0) rotate(-4deg) scale(1.1); }
+}
+@media (hover: none) {
+  .site-cursor { width: 30px; }
+}
+
+/* ————————————————————————————————————————————
+   SCROLL HINT — 首次访问的「向下滑动」引导
+   —— 位于页面下方偏中；光标图案纵向下移 + 极小黑字；整体淡出。
+   —— 只出现一次；第一下真实输入后消失。
+   ———————————————————————————————————————————— */
+.scroll-hint {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  bottom: clamp(5.5rem, 16vh, 9rem);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  opacity: 0;
+  transition: opacity 520ms var(--ease-standard);
+  pointer-events: none;
+}
+.scroll-hint.is-gone { opacity: 0; }
+.scroll-hint-cursor {
+  width: 30px;
+  height: auto;
+  transform: rotate(-4deg);
+  animation: hint-drift 2.4s var(--ease-standard) 0.1s;
+  will-change: transform;
+}
+@keyframes hint-drift {
+  0%   { transform: rotate(-4deg) translateY(0); opacity: 0; }
+  18%  { opacity: 0.9; }
+  55%  { transform: rotate(-4deg) translateY(16px); opacity: 0.7; }
+  100% { transform: rotate(-4deg) translateY(64px); opacity: 0; }
+}
+.scroll-hint-text {
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  color: var(--ink);
+  transition: opacity 520ms var(--ease-standard);
+}
+/* 进入时：先整体淡入，再由内部动画带动 cursor 下移 */
+.scroll-hint.is-on { opacity: 1; }
+
+/* ————————————————————————————————————————————
+   目录打开时：锁定整页浏览（协调衔接，deck.js 读取 body.is-contents-open）
+   ———————————————————————————————————————————— */
+body.is-contents-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ————————————————————————————————————————————
+   REDUCED MOTION — 全局关闭 chrome 动画
+   ———————————————————————————————————————————— */
+@media (prefers-reduced-motion: reduce) {
+  .site-header, .contents-panel, .contents-scrim { transition: none; }
+  .site-cursor { transition: none; animation: none; opacity: 0 !important; }
+  .scroll-hint, .scroll-hint-cursor { transition: none; animation: none; }
+  .scroll-hint-cursor { opacity: 0.9; transform: rotate(-4deg) translateY(10px); }
+}

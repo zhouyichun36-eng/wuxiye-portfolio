@@ -1,0 +1,280 @@
+/* ==========================================================================
+   base.css — 全局视觉系统（Editorial / Independent Publication）
+   --------------------------------------------------------------------------
+   视觉定位：一本可以交互的独立出版物。
+   - 中性画布：微暖白纸面 + 暖黑墨色，颜色全部留给作品本身
+   - 编辑式排版：强反差字号层级、大量留白、允许不对称与错位
+   - 纪实拼贴：图片保持原始比例，默认无任何装饰（圆角/阴影/边框/底板）
+   之后调整全局视觉，只改这一个文件。
+   ========================================================================== */
+
+:root {
+  /* ————————————————————————————————————————
+     01 COLOR — 纯白画布 + 纯黑文字
+     背景 #FFFFFF（无暖白/米白/灰底/渐变），可见文字全部 #000000。
+     信息优先级只通过 字号 / 字重 / 行距 / 字距 / 位置 / 留白 建立，
+     不通过颜色。--gray-* 保留变量名但已归一为纯黑（兼容旧引用）。
+     ———————————————————————————————————————— */
+  --paper:      #FFFFFF;            /* 纯白画布 */
+  --paper-deep: #FFFFFF;            /* 占位底色同纸面 */
+  --ink:        #000000;            /* 纯黑正文 */
+  --gray-60:    #000000;            /* （归一）辅助文字同为纯黑，靠字号/字重区分 */
+  --gray-40:    #000000;            /* （归一）最弱信息同为纯黑 */
+  --line:       rgba(0, 0, 0, 0.16);       /* 细分隔线（非文字） */
+
+  /* ————————————————————————————————————————
+     02 TYPE — 字体族（参考 naze naze 手册的字体逻辑）
+     中文：HarmonyOS Sans SC 优先（干净、克制、中性、编辑感）
+     英文：Lab Grotesque 不可商用下载 → 以 grotesque fallback
+           Helvetica Neue / Helvetica / Arial 替代
+     明确不使用：宋体 / 仿宋 / 楷体 / 圆体 / 几何科技体
+     ———————————————————————————————————————— */
+  --font-sans: "HarmonyOS Sans SC", "Helvetica Neue", "PingFang SC",
+    "Noto Sans CJK SC", "Source Han Sans SC", Helvetica, Arial, sans-serif;
+  /* 衬线停用：视觉系统要求不使用宋体系字体，--font-serif 回退为 sans */
+  --font-serif: var(--font-sans);
+
+  /* ————————————————————————————————————————
+     03 TYPE SCALE — 明确且反差强烈的层级（整体较初版收缩约 12%，
+     用克制字号 + 短行宽 + 留白建立编辑感，而非大字冲击）
+     clamp(最小, 流式, 最大) —— 移动端有独立的最小值，
+     不是桌面的同比例缩小。
+     ———————————————————————————————————————— */
+  --fs-display:  clamp(2.6rem, 9.5vw, 7.75rem);  /* 封面 / 卷首大标题 */
+  --fs-section:  clamp(2rem, 5.6vw, 4.75rem);    /* Section Title（中文主标题） */
+  --fs-project:  clamp(1.55rem, 3.7vw, 3rem);    /* Project Title（中文主标题） */
+  --fs-subtitle: clamp(0.98rem, 1.3vw, 1.2rem);  /* Subtitle / 导语 */
+  --fs-body:     clamp(0.88rem, 0.92vw, 0.95rem);/* Body 正文（克制，不像网页文章） */
+  --fs-caption:  0.72rem;                        /* Caption / 图注 */
+  --fs-data:     clamp(2.2rem, 6.6vw, 5.75rem);  /* Data / Number 大数字 */
+  --fs-nav:      0.72rem;                        /* Navigation / 页码 */
+
+  /* 行高：标题收紧，正文舒展（中文排版需要更大行高） */
+  --lh-tight: 1.06;
+  --lh-title: 1.2;
+  --lh-body:  1.8;
+  --lh-caption: 1.6;
+
+  /* 字距 */
+  --ls-display: -0.02em;
+  --ls-kicker:  0.16em;   /* 小型编号/分类标签 */
+  --ls-caption: 0.04em;
+
+  /* 正文行宽上限：短行宽，保证可读、不像网页文章 */
+  --measure: 28em;
+
+  /* ————————————————————————————————————————
+     04 SPACE — 留白尺度（编辑感的来源）
+     页面留白大，元素间距成组而非平均分布。
+     ———————————————————————————————————————— */
+  --pad-x: clamp(1.25rem, 7vw, 8.5rem);   /* 页面横向留白：桌面非常大 */
+  --pad-y: clamp(2rem, 8vh, 7rem);        /* 页面纵向留白 */
+  --s-1: 0.5rem;
+  --s-2: 1rem;
+  --s-3: 2rem;
+  --s-4: 3.5rem;
+  --s-5: 6rem;
+  --s-6: 9rem;
+
+  /* ————————————————————————————————————————
+     Header Safe Area（Phase 17）—— .page 内容起点恒在 Header 下方
+     高度按 site-chrome.css 的真实 Header（实测：Desktop 65px / Mobile 83px）
+     + 1.25rem 视觉呼吸空间，与"页面原本的 Editorial top spacing"
+     整合，不出现"Header + 巨大空洞"的情况。
+     ———————————————————————————————————————— */
+  --header-height-desktop: 66px;
+  --header-height-mobile:  84px;
+  --header-height:         var(--header-height-desktop);
+  --page-top-desktop:      calc(var(--header-height-desktop) + 1.25rem); /* ≈ 86px */
+  --page-top-mobile:       calc(var(--header-height-mobile)  + 1rem);    /* ≈ 100px */
+  --page-top:              var(--page-top-desktop);
+
+  /* ————————————————————————————————————————
+     05 MOTION — 克制的基础动效
+     只用 opacity / translate / scale 的轻微变化。
+     ———————————————————————————————————————— */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);  /* 自然减速，纸张感 */
+  --ease-deck:     cubic-bezier(0.76, 0, 0.24, 1);  /* 整页切换 */
+  --dur-1: 240ms;   /* hover / 微小反馈 */
+  --dur-2: 520ms;   /* 元素入场 */
+  --dur-3: 850ms;   /* 整页切换 */
+}
+
+/* —— 全局：scroll-padding-top 确保任何滚动容器的 anchor 跳转也保留 Header Offset —— */
+html { scroll-padding-top: var(--header-height); }
+@media (max-width: 767px) {
+  :root {
+    --header-height: var(--header-height-mobile);
+    --page-top:      var(--page-top-mobile);
+    /* Mobile 可读性底线（最终交付要求）：正文 15–17px，caption 11–13px。
+       仅提高移动端最小值，桌面端字号体系保持不变。 */
+    --fs-body:    clamp(0.9375rem, 2.8vw, 1rem);      /* ≥15px @390 */
+    --fs-caption: clamp(0.72rem, 2.3vw, 0.8125rem);   /* 11.5–13px */
+  }
+}
+
+/* —— Reset —— */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;   /* 禁止橡皮筋滚动干扰整页手势（iOS） */
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;          /* 任何情况下不允许横向溢出 */
+  max-width: 100vw;
+}
+
+img, video, canvas, svg { display: block; max-width: 100%; height: auto; }
+
+a { color: inherit; text-decoration-color: var(--line); }
+
+h1, h2, h3, h4, p, figure { margin: 0; font-weight: normal; }
+
+::selection { background: var(--ink); color: var(--paper); }
+
+/* ————————————————————————————————————————————
+   06 TYPE UTILITIES — 信息层级的直接使用类
+   之后每页排版用这些类表达层级，不再单独造字号。
+
+   字重系统（Phase 17）：
+   - 大标题（display/section/project）   ：700（中文主导的第一视觉）
+   - 中英文辅助 subtitle 标题             ：500（弱于中文，但清楚）
+   - 正文 body / caption / data / nav    ：保持原值（data 500，其余 400）
+   ———————————————————————————————————————————— */
+.type-display  { font-size: var(--fs-display);  line-height: var(--lh-tight); letter-spacing: var(--ls-display); font-weight: 700; }
+.type-section  { font-size: var(--fs-section);  line-height: var(--lh-tight); letter-spacing: var(--ls-display); font-weight: 700; }
+.type-project  { font-size: var(--fs-project);  line-height: var(--lh-title); letter-spacing: -0.01em; font-weight: 700; }
+.type-subtitle { font-size: var(--fs-subtitle); line-height: var(--lh-title); font-weight: 500; }
+.type-body     { font-size: var(--fs-body);     line-height: var(--lh-body); max-width: var(--measure); font-weight: 400; }
+.type-caption  { font-size: var(--fs-caption);  line-height: var(--lh-caption); letter-spacing: var(--ls-caption); font-weight: 400; }
+.type-data     { font-size: var(--fs-data);     line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.type-nav      { font-size: var(--fs-nav);      letter-spacing: var(--ls-kicker); text-transform: uppercase; font-weight: 400; }
+
+/* 编辑性点缀：衬线体（引文、卷首语等，少量使用） */
+.type-serif { font-family: var(--font-serif); }
+
+/* ————————————————————————————————————————————
+   07 IMAGE BEHAVIOR — 纪实拼贴的图片规则
+   默认：无圆角、无阴影、无边框、无底版，保持原始比例。
+   ———————————————————————————————————————————— */
+
+/* figure + figcaption 是图片的基本单位 */
+.figure { width: 100%; }
+.figure figcaption {
+  margin-top: var(--s-1);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--gray-60);
+}
+
+/* 需要统一裁切时才使用（默认不用） */
+.figure--crop { aspect-ratio: var(--ratio, 16 / 10); overflow: hidden; }
+.figure--crop img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 拼贴关系：轻微错位 / 重叠 / 突破标准流（桌面专用） */
+@media (min-width: 768px) {
+  .offset-up    { margin-top: calc(var(--s-4) * -1); }
+  .offset-down  { margin-bottom: calc(var(--s-4) * -1); }
+  .offset-left  { margin-left: calc(var(--s-4) * -1); }
+  .offset-right { margin-right: calc(var(--s-4) * -1); }
+  .overlap      { position: relative; z-index: 2; margin-top: calc(var(--s-5) * -1); }
+}
+/* 移动端：拼贴关系简化，所有错位归零，避免溢出与重叠失控 */
+@media (max-width: 767px) {
+  .offset-up, .offset-down, .offset-left, .offset-right, .overlap {
+    margin: 0;
+    position: static;
+  }
+}
+
+/* 移动端图片接近满宽：打破页面留白，贴近视口边缘 */
+@media (max-width: 767px) {
+  .bleed {
+    margin-left: calc(var(--pad-x) * -1);
+    margin-right: calc(var(--pad-x) * -1);
+    width: calc(100% + var(--pad-x) * 2);
+    max-width: none;
+  }
+}
+
+/* ————————————————————————————————————————————
+   08 占位与临时标记
+   ———————————————————————————————————————————— */
+
+/* 图片占位块：扁平纸色，无渐变无圆角；替换为 <img loading="lazy"> 即可 */
+.media-placeholder {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--ratio, 16 / 10);
+  background: var(--paper-deep);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.media-placeholder::after {
+  content: attr(data-label);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-kicker);
+  text-transform: uppercase;
+  color: var(--gray-40);
+}
+
+/* 待替换文案标记 */
+.tbd { border-bottom: 1px dashed var(--gray-40); }
+
+/* 页内可滚动区域（内容在移动端超出单屏时显式开启） */
+.section-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-40) transparent;
+}
+
+/* ————————————————————————————————————————————
+   09 基础入场动效（克制）
+   .reveal：进入 viewport 后自然出现（由 main.js 的 IntersectionObserver 驱动）
+   ———————————————————————————————————————————— */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--dur-2) var(--ease-standard),
+    transform var(--dur-2) var(--ease-standard);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* 尊重用户的减弱动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+  /* Interaction Pass 全局收口（Phase 13）：
+     直接让所有 hover / page transition / spread 状态归零，不留任何 transform。 */
+  .deck-section { transition: none; }
+  .deck-section.is-leaving,
+  .deck-section.is-entering { opacity: 1; transform: none; }
+  .deck-section .media-hover { transition: none; }
+  .deck-section .media-hover.is-hover,
+  .deck-section .media-hover.is-tap,
+  .deck-section .media-hover--cutout.is-hover,
+  .deck-section .media-hover--phone.is-hover { transform: none; }
+  .cover-title { transition: none; }
+  .cover-title.is-hover { --hover-y: 0px; --hover-s: 1; --hover-r: 0deg; }
+}
